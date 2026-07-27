@@ -6,7 +6,7 @@
 ビルド不要・サーバー不要。`index.html` をブラウザで開くだけで動きます。
 画像はブラウザ内だけで処理され、どこにもアップロードされません。
 
-**公開URL（GitHub Pages）：https://marukeso.github.io/image-marker/**
+**公開URL（GitHub Pages）：https://fcl-maruyama.github.io/image-marker/**
 ブラウザで開けばそのまま使えます（インストール不要）。
 
 ## 特長
