@@ -454,7 +454,7 @@
       if (!p.img) return;
       n++;
       const a = document.createElement("a");
-      a.download = `marked-${i + 1}.png`;
+      a.download = `${String(i + 1).padStart(2, "0")}.png`;   // 01.png, 02.png …
       a.href = p.canvas.toDataURL("image/png");
       a.click();
     });
