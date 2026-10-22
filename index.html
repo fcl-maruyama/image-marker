@@ -43,38 +43,62 @@
   .toolbar label:hover { background: #f0f0f0; }
   .toolbar button:disabled { opacity: .4; cursor: default; }
 
-  /* 選択中のツール（各色に対応） */
-  .tool.is-active { font-weight: bold; }
-  #toolStar.is-active   { background: #fff7d6; border-color: #f0c000; } /* 黄 */
-  #toolCircle.is-active { background: #ffe3e3; border-color: #ff8787; } /* 赤 */
-  #toolBlue.is-active   { background: #e3f0ff; border-color: #4a90e2; } /* 青 */
-  #toolPink.is-active   { background: #ffe3f3; border-color: #f06aaf; } /* ピンク */
-  #toolAlpha.is-active  { background: #e3ffe6; border-color: #4caf50; } /* 緑 */
-
-  /* 開始番号・開始文字の入力欄（枠なし・ボタンを目立たせる） */
-  .toolbar .numlabel {
+  /* ツール＋開始値の入力欄を1組にまとめる */
+  .toolgroup {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    font-size: 14px;
-    padding: 4px 4px;
-    border: none;
-    background: transparent;
-    cursor: default;
-    color: #555;
-  }
-  .toolbar .numlabel:hover { background: transparent; }
-  .numlabel input {
-    width: 60px;
-    font-size: 14px;
-    padding: 4px 6px;
+    gap: 4px;
+    padding: 3px 6px 3px 3px;
     border: 1px solid #ccc;
+    border-radius: 24px;
+    background: #fff;
+  }
+  .toolbar .tool {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 2px solid transparent;
+    border-radius: 50%;
+    background: transparent;
+  }
+  .toolbar .tool:hover { background: transparent; border-color: #ccc; }
+  /* 選択中のツール：外側に濃いリング */
+  .toolbar .tool.is-active { border-color: #222; }
+  .toolgroup:has(.is-active) { border-color: #888; box-shadow: 0 0 0 2px #e4e4e7; }
+
+  /* 実際に置かれるマークと同じ見た目の丸（中身は開始値） */
+  .dot {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 28px;
+    height: 28px;
+    padding: 0 4px;
+    box-sizing: border-box;
+    border-radius: 14px;
+    border: 2px solid;
+    color: #fff;
+    font-weight: bold;
+    font-size: 14px;
+    line-height: 1;
+  }
+  .dot.is-red   { background: rgba(255,0,0,0.85);   border-color: #b00000; }
+  .dot.is-blue  { background: rgba(25,118,210,0.9); border-color: #0d47a1; }
+  .dot.is-pink  { background: rgba(236,64,152,0.9); border-color: #b0186b; }
+  .dot.is-green { background: rgba(46,160,67,0.9);  border-color: #1b7a2f; }
+  .dot.is-star  { border: none; color: #f0b400; font-size: 26px; text-shadow: 0 0 1px #c08a00; }
+
+  /* 開始番号・開始文字の入力欄 */
+  .toolgroup input {
+    width: 44px;
+    font-size: 14px;
+    padding: 3px 4px;
+    border: 1px solid #ddd;
     border-radius: 4px;
   }
-  .numlabel input#startAlpha {
-    width: 36px;
-    text-transform: uppercase;
-  }
+  .toolgroup input.is-alpha { width: 34px; text-transform: uppercase; }
+  .toolbar .sep { width: 1px; align-self: stretch; background: #ddd; margin: 0 4px; }
 
   /* 画像パネルを横並び（各400px固定・折り返さず横スクロール） */
   .panels {
@@ -151,27 +175,34 @@
   <h1>画像にマーク（赤丸連番・星）</h1>
 
   <div class="toolbar">
-    <button class="tool" id="toolStar" data-tool="star">★ 星マーク</button>
+    <div class="toolgroup">
+      <button class="tool" data-tool="star" title="星マーク" aria-label="星マーク"><span class="dot is-star">★</span></button>
+    </div>
+    <div class="toolgroup">
+      <button class="tool is-active" data-tool="circle" title="赤丸＋連番" aria-label="赤丸＋連番"><span class="dot is-red" data-start-for="startRed">1</span></button>
+      <input type="number" id="startRed" class="start-num" value="1" min="0" step="1" title="赤丸の開始番号" aria-label="赤丸の開始番号">
+    </div>
+    <div class="toolgroup">
+      <button class="tool" data-tool="blue" title="青丸＋連番" aria-label="青丸＋連番"><span class="dot is-blue" data-start-for="startBlue">1</span></button>
+      <input type="number" id="startBlue" class="start-num" value="1" min="0" step="1" title="青丸の開始番号" aria-label="青丸の開始番号">
+    </div>
+    <div class="toolgroup">
+      <button class="tool" data-tool="pink" title="ピンク丸＋連番" aria-label="ピンク丸＋連番"><span class="dot is-pink" data-start-for="startPink">1</span></button>
+      <input type="number" id="startPink" class="start-num" value="1" min="0" step="1" title="ピンク丸の開始番号" aria-label="ピンク丸の開始番号">
+    </div>
+    <div class="toolgroup">
+      <button class="tool" data-tool="alpha" title="緑丸＋アルファベット" aria-label="緑丸＋アルファベット"><span class="dot is-green" data-start-for="startAlpha">A</span></button>
+      <input type="text" id="startAlpha" class="is-alpha" value="A" maxlength="2" size="2" title="緑丸の開始文字" aria-label="緑丸の開始文字">
+    </div>
 
-    <button class="tool is-active" id="toolCircle" data-tool="circle">① 赤丸＋連番</button>
-    <button class="tool" id="toolBlue" data-tool="blue">① 青丸＋連番</button>
-    <button class="tool" id="toolPink" data-tool="pink">① ピンク丸＋連番</button>
-    <label class="numlabel">開始番号
-      <input type="number" id="startNum" value="1" min="0" step="1">
-    </label>
-
-    <button class="tool" id="toolAlpha" data-tool="alpha">Ⓐ 緑丸＋アルファベット</button>
-    <label class="numlabel">開始文字
-      <input type="text" id="startAlpha" value="A" maxlength="2" size="2">
-    </label>
-
+    <span class="sep" aria-hidden="true"></span>
     <button id="undoBtn" disabled>取り消し (Ctrl+Z)</button>
     <button id="clearBtn" disabled>全消し</button>
     <button id="saveBtn" disabled>PNGで保存</button>
   </div>
 
   <div class="panels" id="panels"><!-- パネルと「＋」ボタンはJSで生成 --></div>
-  <p class="hint">各枠にクリックorドロップで画像を読み込み、クリックでマークを置く。右の「＋」でパネルを追加（最大8枚）。番号（赤・青・ピンクは色ごと）・アルファベットは全パネルを通して置いた順にそれぞれ連番になります。取り消しは全体で直前の1つ。</p>
+  <p class="hint">各枠にクリックorドロップで画像を読み込み、上の丸を選んでクリックでマークを置く（丸の横の欄は開始番号・開始文字）。右の「＋」でパネルを追加（最大8枚）。番号（赤・青・ピンクは色ごと）・アルファベットは全パネルを通して置いた順にそれぞれ連番になります。取り消しは全体で直前の1つ。</p>
 
 <script>
 (() => {
@@ -183,7 +214,12 @@
   const undoBtn = document.getElementById("undoBtn");
   const clearBtn = document.getElementById("clearBtn");
   const saveBtn = document.getElementById("saveBtn");
-  const startNum = document.getElementById("startNum");
+  // 連番ツール → 開始番号の入力欄
+  const startNums = {
+    circle: document.getElementById("startRed"),
+    blue: document.getElementById("startBlue"),
+    pink: document.getElementById("startPink")
+  };
   const startAlpha = document.getElementById("startAlpha");
   const toolButtons = document.querySelectorAll(".tool");
 
@@ -278,7 +314,6 @@
       p.ctx.drawImage(p.img, 0, 0);
     }
     // 置いた順にマークを描く。赤・青・ピンクの丸とアルファベットは別々に通しでカウント
-    const startN = parseInt(startNum.value, 10) || 0;
     const startA = alphaToIndex(startAlpha.value);
     const countN = { circle: 0, blue: 0, pink: 0 };   // 色ごとの連番
     let countA = 0;   // アルファベット連番
@@ -287,7 +322,7 @@
       if (!p || !p.img) continue;
       const r = markRadius(p.img);
       if (m.type in countN) {
-        drawCircle(p.ctx, m.x, m.y, r, String(startN + countN[m.type]), NUM_COLOR[m.type]);
+        drawCircle(p.ctx, m.x, m.y, r, String(startValue(m.type) + countN[m.type]), NUM_COLOR[m.type]);
         countN[m.type]++;
       } else if (m.type === "alpha") {
         drawCircle(p.ctx, m.x, m.y, r, indexToAlpha(startA + countA), "green");
@@ -296,6 +331,10 @@
         drawStar(p.ctx, m.x, m.y, r);
       }
     }
+  }
+
+  function startValue(type) {
+    return parseInt(startNums[type].value, 10) || 0;
   }
 
   // 連番ツール → 丸の色
@@ -469,8 +508,16 @@
   });
 
   // 開始番号・開始文字を変えたら描き直す
-  startNum.addEventListener("input", () => redrawAll());
-  startAlpha.addEventListener("input", () => redrawAll());
+  // ボタンの丸にも開始値を表示する
+  function updateStartLabels() {
+    for (const type in startNums) {
+      document.querySelector(`[data-start-for="${startNums[type].id}"]`).textContent = startValue(type);
+    }
+    document.querySelector('[data-start-for="startAlpha"]').textContent = indexToAlpha(alphaToIndex(startAlpha.value));
+  }
+  for (const input of [...Object.values(startNums), startAlpha]) {
+    input.addEventListener("input", () => { updateStartLabels(); redrawAll(); });
+  }
 
   // Ctrl+Z で取り消し
   document.addEventListener("keydown", (e) => {
