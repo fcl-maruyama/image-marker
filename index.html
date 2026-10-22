@@ -47,6 +47,8 @@
   .tool.is-active { font-weight: bold; }
   #toolStar.is-active   { background: #fff7d6; border-color: #f0c000; } /* 黄 */
   #toolCircle.is-active { background: #ffe3e3; border-color: #ff8787; } /* 赤 */
+  #toolBlue.is-active   { background: #e3f0ff; border-color: #4a90e2; } /* 青 */
+  #toolPink.is-active   { background: #ffe3f3; border-color: #f06aaf; } /* ピンク */
   #toolAlpha.is-active  { background: #e3ffe6; border-color: #4caf50; } /* 緑 */
 
   /* 開始番号・開始文字の入力欄（枠なし・ボタンを目立たせる） */
@@ -152,6 +154,8 @@
     <button class="tool" id="toolStar" data-tool="star">★ 星マーク</button>
 
     <button class="tool is-active" id="toolCircle" data-tool="circle">① 赤丸＋連番</button>
+    <button class="tool" id="toolBlue" data-tool="blue">① 青丸＋連番</button>
+    <button class="tool" id="toolPink" data-tool="pink">① ピンク丸＋連番</button>
     <label class="numlabel">開始番号
       <input type="number" id="startNum" value="1" min="0" step="1">
     </label>
@@ -167,7 +171,7 @@
   </div>
 
   <div class="panels" id="panels"><!-- パネルと「＋」ボタンはJSで生成 --></div>
-  <p class="hint">各枠にクリックorドロップで画像を読み込み、クリックでマークを置く。右の「＋」でパネルを追加（最大8枚）。番号・アルファベットは全パネルを通して置いた順にそれぞれ連番になります。取り消しは全体で直前の1つ。</p>
+  <p class="hint">各枠にクリックorドロップで画像を読み込み、クリックでマークを置く。右の「＋」でパネルを追加（最大8枚）。番号（赤・青・ピンクは色ごと）・アルファベットは全パネルを通して置いた順にそれぞれ連番になります。取り消しは全体で直前の1つ。</p>
 
 <script>
 (() => {
@@ -273,18 +277,18 @@
       p.canvas.height = p.img.height;
       p.ctx.drawImage(p.img, 0, 0);
     }
-    // 置いた順にマークを描く。赤丸とアルファベットは別々に通しでカウント
+    // 置いた順にマークを描く。赤・青・ピンクの丸とアルファベットは別々に通しでカウント
     const startN = parseInt(startNum.value, 10) || 0;
     const startA = alphaToIndex(startAlpha.value);
-    let countN = 0;   // 赤丸連番
+    const countN = { circle: 0, blue: 0, pink: 0 };   // 色ごとの連番
     let countA = 0;   // アルファベット連番
     for (const m of marks) {
       const p = panels[m.panel];
       if (!p || !p.img) continue;
       const r = markRadius(p.img);
-      if (m.type === "circle") {
-        drawCircle(p.ctx, m.x, m.y, r, String(startN + countN), "red");
-        countN++;
+      if (m.type in countN) {
+        drawCircle(p.ctx, m.x, m.y, r, String(startN + countN[m.type]), NUM_COLOR[m.type]);
+        countN[m.type]++;
       } else if (m.type === "alpha") {
         drawCircle(p.ctx, m.x, m.y, r, indexToAlpha(startA + countA), "green");
         countA++;
@@ -294,11 +298,20 @@
     }
   }
 
-  // 丸＋ラベル（color: "red"=赤丸連番 / "green"=緑丸アルファベット）
+  // 連番ツール → 丸の色
+  const NUM_COLOR = { circle: "red", blue: "blue", pink: "pink" };
+
+  // 丸の配色
+  const CIRCLE_COLORS = {
+    red:   { fill: "rgba(255,0,0,0.85)",    stroke: "#b00000" },
+    blue:  { fill: "rgba(25,118,210,0.9)",  stroke: "#0d47a1" },
+    pink:  { fill: "rgba(236,64,152,0.9)",  stroke: "#b0186b" },
+    green: { fill: "rgba(46,160,67,0.9)",   stroke: "#1b7a2f" }
+  };
+
+  // 丸＋ラベル（color: "red"/"blue"/"pink"=連番 / "green"=緑丸アルファベット）
   function drawCircle(ctx, x, y, r, label, color) {
-    const c = color === "green"
-      ? { fill: "rgba(46,160,67,0.9)", stroke: "#1b7a2f" }
-      : { fill: "rgba(255,0,0,0.85)",  stroke: "#b00000" };
+    const c = CIRCLE_COLORS[color] || CIRCLE_COLORS.red;
     ctx.beginPath();
     ctx.arc(x, y, r, 0, Math.PI * 2);
     ctx.fillStyle = c.fill;
