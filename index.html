@@ -49,7 +49,7 @@
     align-items: center;
     gap: 4px;
     padding: 3px 6px 3px 3px;
-    border: 1px solid #ccc;
+    border: 2px solid #ccc;
     border-radius: 24px;
     background: #fff;
   }
@@ -62,10 +62,22 @@
     border-radius: 50%;
     background: transparent;
   }
-  .toolbar .tool:hover { background: transparent; border-color: #ccc; }
-  /* 選択中のツール：外側に濃いリング */
-  .toolbar .tool.is-active { border-color: #222; }
-  .toolgroup:has(.is-active) { border-color: #888; box-shadow: 0 0 0 2px #e4e4e7; }
+  .toolbar .tool:hover { background: transparent; }
+
+  /* 選択中のツール：その色の枠＋薄い色の背景。選ばれていない組は淡くする */
+  .toolgroup { --c: #888; --bg: #f4f4f5; opacity: .5; transition: opacity .15s; }
+  .toolgroup:hover { opacity: .8; }
+  .toolgroup:has(.is-active) {
+    opacity: 1;
+    border: 2px solid var(--c);
+    background: var(--bg);
+    box-shadow: 0 2px 6px rgba(0,0,0,.15);
+  }
+  .toolgroup.is-star  { --c: #f0b400; --bg: #fff7d6; }
+  .toolgroup.is-red   { --c: #e00000; --bg: #ffe3e3; }
+  .toolgroup.is-blue  { --c: #1976d2; --bg: #e3f0ff; }
+  .toolgroup.is-pink  { --c: #ec4098; --bg: #ffe3f3; }
+  .toolgroup.is-green { --c: #2ea043; --bg: #e3ffe6; }
 
   /* 実際に置かれるマークと同じ見た目の丸（中身は開始値） */
   .dot {
@@ -175,22 +187,22 @@
   <h1>画像にマーク（赤丸連番・星）</h1>
 
   <div class="toolbar">
-    <div class="toolgroup">
+    <div class="toolgroup is-star">
       <button class="tool" data-tool="star" title="星マーク" aria-label="星マーク"><span class="dot is-star">★</span></button>
     </div>
-    <div class="toolgroup">
+    <div class="toolgroup is-red">
       <button class="tool is-active" data-tool="circle" title="赤丸＋連番" aria-label="赤丸＋連番"><span class="dot is-red" data-start-for="startRed">1</span></button>
       <input type="number" id="startRed" class="start-num" value="1" min="0" step="1" title="赤丸の開始番号" aria-label="赤丸の開始番号">
     </div>
-    <div class="toolgroup">
+    <div class="toolgroup is-blue">
       <button class="tool" data-tool="blue" title="青丸＋連番" aria-label="青丸＋連番"><span class="dot is-blue" data-start-for="startBlue">1</span></button>
       <input type="number" id="startBlue" class="start-num" value="1" min="0" step="1" title="青丸の開始番号" aria-label="青丸の開始番号">
     </div>
-    <div class="toolgroup">
+    <div class="toolgroup is-pink">
       <button class="tool" data-tool="pink" title="ピンク丸＋連番" aria-label="ピンク丸＋連番"><span class="dot is-pink" data-start-for="startPink">1</span></button>
       <input type="number" id="startPink" class="start-num" value="1" min="0" step="1" title="ピンク丸の開始番号" aria-label="ピンク丸の開始番号">
     </div>
-    <div class="toolgroup">
+    <div class="toolgroup is-green">
       <button class="tool" data-tool="alpha" title="緑丸＋アルファベット" aria-label="緑丸＋アルファベット"><span class="dot is-green" data-start-for="startAlpha">A</span></button>
       <input type="text" id="startAlpha" class="is-alpha" value="A" maxlength="2" size="2" title="緑丸の開始文字" aria-label="緑丸の開始文字">
     </div>
