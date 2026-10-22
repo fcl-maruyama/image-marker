@@ -419,23 +419,19 @@
     return out;
   }
 
-  // テキスト（白文字＋細い黒縁＋ぼかし影。複数行可。クリック位置を左端・1行目の縦中央にする）
+  // テキスト（白文字＋黒縁取り。複数行可。クリック位置を左端・1行目の縦中央にする）
   function drawText(ctx, x, y, r, text) {
-    const size = Math.round(r * 0.9);
+    const size = Math.round(r * 0.8);
     const lineHeight = size * 1.3;
     const lines = String(text).split("\n");
     ctx.font = `bold ${size}px system-ui, sans-serif`;
     ctx.textAlign = "left";
     ctx.textBaseline = "middle";
     ctx.lineJoin = "round";
-    // 縁＋影を先に描き、その上に白文字を重ねる（白文字側には影を付けずにくっきりさせる）
-    ctx.save();
-    ctx.shadowColor = "rgba(0,0,0,0.8)";
-    ctx.shadowBlur = r * 0.25;
-    ctx.lineWidth = Math.max(2, r * 0.08);
+    // 縁取りを先に全行描き、その上に白文字を重ねる（行が近くても縁が白文字に被らない）
+    ctx.lineWidth = Math.max(3, size * 0.2);
     ctx.strokeStyle = "#000";
     lines.forEach((line, i) => ctx.strokeText(line, x, y + i * lineHeight));
-    ctx.restore();
     ctx.fillStyle = "#fff";
     lines.forEach((line, i) => ctx.fillText(line, x, y + i * lineHeight));
   }
