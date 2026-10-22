@@ -186,13 +186,16 @@
   .text-input {
     position: absolute;
     z-index: 5;
-    min-width: 160px;
+    min-width: 180px;
+    resize: none;
+    font-family: inherit;
+    line-height: 1.4;
     font-size: 14px;
     padding: 4px 6px;
     border: 2px solid #333;
     border-radius: 4px;
     background: #fff;
-    transform: translateY(-50%);   /* クリック位置を入力欄の縦中央に */
+    transform: translateY(-1.2em);   /* クリック位置が1行目の高さに来るように */
   }
   .hint { font-size: 12px; color: #888; margin-top: 8px; }
 </style>
@@ -231,7 +234,7 @@
   </div>
 
   <div class="panels" id="panels"><!-- パネルと「＋」ボタンはJSで生成 --></div>
-  <p class="hint">各枠にクリックorドロップで画像を読み込み、上の丸を選んでクリックでマークを置く（丸の横の欄は開始番号・開始文字）。右の「＋」でパネルを追加（最大8枚）。番号（赤・青・ピンクは色ごと）・アルファベットは全パネルを通して置いた順にそれぞれ連番になります。「T」を選んでクリックすると、その場所に文字を入力できます（Enterで確定・Escで取りやめ）。取り消しは全体で直前の1つ。</p>
+  <p class="hint">各枠にクリックorドロップで画像を読み込み、上の丸を選んでクリックでマークを置く（丸の横の欄は開始番号・開始文字）。右の「＋」でパネルを追加（最大8枚）。番号（赤・青・ピンクは色ごと）・アルファベットは全パネルを通して置いた順にそれぞれ連番になります。「T」を選んでクリックすると、その場所に文字を入力できます（Enterで確定・Shift+Enterで改行・Escで取りやめ）。取り消しは全体で直前の1つ。</p>
 
 <script>
 (() => {
@@ -416,17 +419,25 @@
     return out;
   }
 
-  // テキスト（白文字＋黒縁取り。クリック位置を左端・縦中央にする）
+  // テキスト（白文字＋細い黒縁＋ぼかし影。複数行可。クリック位置を左端・1行目の縦中央にする）
   function drawText(ctx, x, y, r, text) {
-    ctx.font = `bold ${Math.round(r * 0.9)}px system-ui, sans-serif`;
+    const size = Math.round(r * 0.9);
+    const lineHeight = size * 1.3;
+    const lines = String(text).split("\n");
+    ctx.font = `bold ${size}px system-ui, sans-serif`;
     ctx.textAlign = "left";
     ctx.textBaseline = "middle";
     ctx.lineJoin = "round";
-    ctx.lineWidth = Math.max(3, r * 0.18);
+    // 縁＋影を先に描き、その上に白文字を重ねる（白文字側には影を付けずにくっきりさせる）
+    ctx.save();
+    ctx.shadowColor = "rgba(0,0,0,0.8)";
+    ctx.shadowBlur = r * 0.25;
+    ctx.lineWidth = Math.max(2, r * 0.08);
     ctx.strokeStyle = "#000";
-    ctx.strokeText(text, x, y);
+    lines.forEach((line, i) => ctx.strokeText(line, x, y + i * lineHeight));
+    ctx.restore();
     ctx.fillStyle = "#fff";
-    ctx.fillText(text, x, y);
+    lines.forEach((line, i) => ctx.fillText(line, x, y + i * lineHeight));
   }
 
   // 星マーク（5角の星・黄色）
@@ -492,10 +503,10 @@
   function openTextInput(panel, index, evt, pos) {
     if (activeTextInput) activeTextInput.blur();   // 入力中のものは先に確定
     const stageRect = panel.stage.getBoundingClientRect();
-    const input = document.createElement("input");
-    input.type = "text";
+    const input = document.createElement("textarea");
     input.className = "text-input";
-    input.placeholder = "文字を入力してEnter";
+    input.rows = 1;
+    input.placeholder = "Enterで確定・Shift+Enterで改行";
     input.style.left = (evt.clientX - stageRect.left + panel.stage.scrollLeft) + "px";
     input.style.top = (evt.clientY - stageRect.top + panel.stage.scrollTop) + "px";
     panel.stage.append(input);
@@ -505,7 +516,7 @@
     const finish = (commit) => {
       if (done) return;
       done = true;
-      const text = input.value.trim();
+      const text = input.value.replace(/\s+$/, "").replace(/^\s*\n/, "");   // 前後の空行は捨てる
       input.remove();
       activeTextInput = null;
       if (!commit || !text) return;
@@ -514,8 +525,15 @@
       updateButtons();
     };
     input.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" && !e.isComposing) finish(true);   // 変換確定のEnterは除く
-      else if (e.key === "Escape") finish(false);
+      if (e.key === "Enter" && !e.shiftKey && !e.isComposing) {   // 変換確定のEnterは除く
+        e.preventDefault();
+        finish(true);
+      } else if (e.key === "Escape") finish(false);
+    });
+    // 行数に合わせて入力欄の高さを伸ばす
+    input.addEventListener("input", () => {
+      input.style.height = "auto";
+      input.style.height = input.scrollHeight + "px";
     });
     input.addEventListener("blur", () => finish(true));
     setTimeout(() => input.focus());   // クリック直後のフォーカス移動に負けないよう次の順番で
@@ -603,7 +621,7 @@
 
   // Ctrl+Z で取り消し
   document.addEventListener("keydown", (e) => {
-    if (e.target.matches("input")) return;   // 入力欄の中ではその欄の取り消しを優先
+    if (e.target.matches("input, textarea")) return;   // 入力欄の中ではその欄の取り消しを優先
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
       e.preventDefault();
       undo();
