@@ -78,6 +78,7 @@
   .toolgroup.is-blue  { --c: #1976d2; --bg: #e3f0ff; }
   .toolgroup.is-pink  { --c: #ec4098; --bg: #ffe3f3; }
   .toolgroup.is-green { --c: #2ea043; --bg: #e3ffe6; }
+  .toolgroup.is-text  { --c: #333;    --bg: #ececee; }
 
   /* 実際に置かれるマークと同じ見た目の丸（中身は開始値） */
   .dot {
@@ -99,6 +100,7 @@
   .dot.is-blue  { background: rgba(25,118,210,0.9); border-color: #0d47a1; }
   .dot.is-pink  { background: rgba(236,64,152,0.9); border-color: #b0186b; }
   .dot.is-green { background: rgba(46,160,67,0.9);  border-color: #1b7a2f; }
+  .dot.is-text  { background: #333; border-color: #000; font-family: Georgia, serif; }
   .dot.is-star  { border: none; color: #f0b400; font-size: 26px; text-shadow: 0 0 1px #c08a00; }
 
   /* 開始番号・開始文字の入力欄 */
@@ -180,6 +182,18 @@
     cursor: pointer;
     width: 100%;
   }
+  /* テキストツール：クリック位置に出す入力欄 */
+  .text-input {
+    position: absolute;
+    z-index: 5;
+    min-width: 160px;
+    font-size: 14px;
+    padding: 4px 6px;
+    border: 2px solid #333;
+    border-radius: 4px;
+    background: #fff;
+    transform: translateY(-50%);   /* クリック位置を入力欄の縦中央に */
+  }
   .hint { font-size: 12px; color: #888; margin-top: 8px; }
 </style>
 </head>
@@ -206,6 +220,9 @@
       <button class="tool" data-tool="alpha" title="緑丸＋アルファベット" aria-label="緑丸＋アルファベット"><span class="dot is-green" data-start-for="startAlpha">A</span></button>
       <input type="text" id="startAlpha" class="is-alpha" value="A" maxlength="2" size="2" title="緑丸の開始文字" aria-label="緑丸の開始文字">
     </div>
+    <div class="toolgroup is-text">
+      <button class="tool" data-tool="text" title="テキスト" aria-label="テキスト"><span class="dot is-text">T</span></button>
+    </div>
 
     <span class="sep" aria-hidden="true"></span>
     <button id="undoBtn" disabled>取り消し (Ctrl+Z)</button>
@@ -214,7 +231,7 @@
   </div>
 
   <div class="panels" id="panels"><!-- パネルと「＋」ボタンはJSで生成 --></div>
-  <p class="hint">各枠にクリックorドロップで画像を読み込み、上の丸を選んでクリックでマークを置く（丸の横の欄は開始番号・開始文字）。右の「＋」でパネルを追加（最大8枚）。番号（赤・青・ピンクは色ごと）・アルファベットは全パネルを通して置いた順にそれぞれ連番になります。取り消しは全体で直前の1つ。</p>
+  <p class="hint">各枠にクリックorドロップで画像を読み込み、上の丸を選んでクリックでマークを置く（丸の横の欄は開始番号・開始文字）。右の「＋」でパネルを追加（最大8枚）。番号（赤・青・ピンクは色ごと）・アルファベットは全パネルを通して置いた順にそれぞれ連番になります。「T」を選んでクリックすると、その場所に文字を入力できます（Enterで確定・Escで取りやめ）。取り消しは全体で直前の1つ。</p>
 
 <script>
 (() => {
@@ -339,6 +356,8 @@
       } else if (m.type === "alpha") {
         drawCircle(p.ctx, m.x, m.y, r, indexToAlpha(startA + countA), "green");
         countA++;
+      } else if (m.type === "text") {
+        drawText(p.ctx, m.x, m.y, r, m.text);
       } else {
         drawStar(p.ctx, m.x, m.y, r);
       }
@@ -395,6 +414,19 @@
       n = Math.floor((n - 1) / 26);
     }
     return out;
+  }
+
+  // テキスト（白文字＋黒縁取り。クリック位置を左端・縦中央にする）
+  function drawText(ctx, x, y, r, text) {
+    ctx.font = `bold ${Math.round(r * 0.9)}px system-ui, sans-serif`;
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
+    ctx.lineJoin = "round";
+    ctx.lineWidth = Math.max(3, r * 0.18);
+    ctx.strokeStyle = "#000";
+    ctx.strokeText(text, x, y);
+    ctx.fillStyle = "#fff";
+    ctx.fillText(text, x, y);
   }
 
   // 星マーク（5角の星・黄色）
@@ -455,12 +487,50 @@
     };
   }
 
+  // ---- テキスト入力：クリック位置に入力欄を出し、確定したらマークとして追加 ----
+  let activeTextInput = null;
+  function openTextInput(panel, index, evt, pos) {
+    if (activeTextInput) activeTextInput.blur();   // 入力中のものは先に確定
+    const stageRect = panel.stage.getBoundingClientRect();
+    const input = document.createElement("input");
+    input.type = "text";
+    input.className = "text-input";
+    input.placeholder = "文字を入力してEnter";
+    input.style.left = (evt.clientX - stageRect.left + panel.stage.scrollLeft) + "px";
+    input.style.top = (evt.clientY - stageRect.top + panel.stage.scrollTop) + "px";
+    panel.stage.append(input);
+    activeTextInput = input;
+
+    let done = false;
+    const finish = (commit) => {
+      if (done) return;
+      done = true;
+      const text = input.value.trim();
+      input.remove();
+      activeTextInput = null;
+      if (!commit || !text) return;
+      marks.push({ panel: index, type: "text", x: pos.x, y: pos.y, text });
+      redrawAll();
+      updateButtons();
+    };
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.isComposing) finish(true);   // 変換確定のEnterは除く
+      else if (e.key === "Escape") finish(false);
+    });
+    input.addEventListener("blur", () => finish(true));
+    setTimeout(() => input.focus());   // クリック直後のフォーカス移動に負けないよう次の順番で
+  }
+
   // ---- パネルごとのイベント配線 ----
   function wirePanel(panel, index) {
     // クリックでマーク設置
     panel.canvas.addEventListener("click", (e) => {
       if (!panel.img) return;
       const pos = canvasPos(panel.canvas, e);
+      if (currentTool === "text") {
+        openTextInput(panel, index, e, pos);
+        return;
+      }
       marks.push({ panel: index, type: currentTool, x: pos.x, y: pos.y });
       redrawAll();
       updateButtons();
@@ -533,6 +603,7 @@
 
   // Ctrl+Z で取り消し
   document.addEventListener("keydown", (e) => {
+    if (e.target.matches("input")) return;   // 入力欄の中ではその欄の取り消しを優先
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
       e.preventDefault();
       undo();
