@@ -123,6 +123,15 @@
     border-radius: 4px;
   }
   .toolgroup input.is-alpha { width: 34px; text-transform: uppercase; }
+  /* 連動表示（アンカー先の開始番号）：編集不可。クリックで元の欄へ。変わると一瞬光る */
+  .toolgroup input[readonly] {
+    background: #f0f0f0;
+    color: #888;
+    border-style: dashed;
+    cursor: pointer;
+  }
+  .toolgroup input.is-flash { animation: flash .6s ease-out; }
+  @keyframes flash { from { background: #ffb3d9; color: #b0186b; } }
   .toolbar .sep { width: 1px; align-self: stretch; background: #ddd; margin: 0 4px; }
 
   /* 画像パネルを横並び（各400px固定・折り返さず横スクロール） */
@@ -233,6 +242,7 @@
     <!-- 開始番号はアンカーリンクと共通（リンクn番 ↔ 移動先n番で対応させる） -->
     <div class="toolgroup is-pinkline">
       <button class="tool" data-tool="pinkTarget" title="アンカー先（ピンク枠の白丸＋連番・開始番号はアンカーリンクと共通）"><span class="dot is-pinkline" data-start-for="startPink" aria-hidden="true">1</span><span class="tool-name">アンカー先</span></button>
+      <input type="text" id="startPinkTarget" value="1" readonly tabindex="-1" title="アンカーリンクの開始番号と連動（変更はアンカーリンク側で）" aria-label="アンカー先の開始番号（アンカーリンクと連動）">
     </div>
     <div class="toolgroup is-green">
       <button class="tool" data-tool="alpha" title="ボタン（緑丸＋アルファベット）"><span class="dot is-green" data-start-for="startAlpha" aria-hidden="true">A</span><span class="tool-name">ボタン</span></button>
@@ -632,6 +642,17 @@
   for (const input of new Set([...Object.values(startNums), startAlpha])) {
     input.addEventListener("input", () => { updateStartLabels(); redrawAll(); });
   }
+
+  // アンカー先の開始番号欄はアンカーリンクの欄を写すだけ。変わったら光らせて連動を見せる
+  const pinkMirror = document.getElementById("startPinkTarget");
+  pinkMirror.value = startValue("pink");   // リロード時にブラウザが欄の値を復元しても揃える
+  startNums.pink.addEventListener("input", () => {
+    pinkMirror.value = startValue("pink");
+    pinkMirror.classList.remove("is-flash");
+    void pinkMirror.offsetWidth;   // アニメーションを頭からやり直す
+    pinkMirror.classList.add("is-flash");
+  });
+  pinkMirror.addEventListener("click", () => startNums.pink.focus());
 
   // Ctrl+Z で取り消し
   document.addEventListener("keydown", (e) => {
