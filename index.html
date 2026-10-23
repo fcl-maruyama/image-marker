@@ -72,6 +72,9 @@
     white-space: nowrap;
   }
   .is-star .tool-name { color: #a87800; }   /* 黄色そのままだと白地で読みにくい */
+  /* テキスト入力：名前を1px小さくし、下に操作の案内を添える */
+  .is-text .tool-name { font-size: 10px; line-height: 1.2; text-align: left; }
+  .tool-name small { display: block; font-size: 9px; font-weight: normal; color: #777; }
 
   /* 選択中のツール：その色の枠＋薄い色の背景。選ばれていない組は淡くする */
   .toolgroup { --c: #888; --bg: #f4f4f5; opacity: .5; transition: opacity .15s; }
@@ -238,7 +241,7 @@
       <input type="text" id="startAlpha" class="is-alpha" value="A" maxlength="2" size="2" title="緑丸の開始文字" aria-label="緑丸の開始文字">
     </div>
     <div class="toolgroup is-text">
-      <button class="tool" data-tool="text" title="テキスト入力"><span class="dot is-text" aria-hidden="true">T</span><span class="tool-name">テキスト入力</span></button>
+      <button class="tool" data-tool="text" title="テキスト入力"><span class="dot is-text" aria-hidden="true">T</span><span class="tool-name">テキスト入力<small>Shift+Enterで改行</small></span></button>
     </div>
 
     <span class="sep" aria-hidden="true"></span>
