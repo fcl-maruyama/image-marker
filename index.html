@@ -57,12 +57,21 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    gap: 4px;
     padding: 0;
     border: 2px solid transparent;
-    border-radius: 50%;
+    border-radius: 16px;
     background: transparent;
   }
   .toolbar .tool:hover { background: transparent; }
+  /* ツール名（丸の右に小さく） */
+  .tool-name {
+    font-size: 11px;
+    font-weight: bold;
+    color: var(--c);
+    white-space: nowrap;
+  }
+  .is-star .tool-name { color: #a87800; }   /* 黄色そのままだと白地で読みにくい */
 
   /* 選択中のツール：その色の枠＋薄い色の背景。選ばれていない組は淡くする */
   .toolgroup { --c: #888; --bg: #f4f4f5; opacity: .5; transition: opacity .15s; }
@@ -205,22 +214,22 @@
 
   <div class="toolbar">
     <div class="toolgroup is-star">
-      <button class="tool" data-tool="star" title="星マーク" aria-label="星マーク"><span class="dot is-star">★</span></button>
+      <button class="tool" data-tool="star" title="画像切り替え（星マーク）"><span class="dot is-star" aria-hidden="true">★</span><span class="tool-name">画像切り替え</span></button>
     </div>
     <div class="toolgroup is-red">
-      <button class="tool is-active" data-tool="circle" title="赤丸＋連番" aria-label="赤丸＋連番"><span class="dot is-red" data-start-for="startRed">1</span></button>
+      <button class="tool is-active" data-tool="circle" title="画像（赤丸＋連番）"><span class="dot is-red" data-start-for="startRed" aria-hidden="true">1</span><span class="tool-name">画像</span></button>
       <input type="number" id="startRed" class="start-num" value="1" min="0" step="1" title="赤丸の開始番号" aria-label="赤丸の開始番号">
     </div>
     <div class="toolgroup is-blue">
-      <button class="tool" data-tool="blue" title="青丸＋連番" aria-label="青丸＋連番"><span class="dot is-blue" data-start-for="startBlue">1</span></button>
+      <button class="tool" data-tool="blue" title="ムービー（青丸＋連番）"><span class="dot is-blue" data-start-for="startBlue" aria-hidden="true">1</span><span class="tool-name">ムービー</span></button>
       <input type="number" id="startBlue" class="start-num" value="1" min="0" step="1" title="青丸の開始番号" aria-label="青丸の開始番号">
     </div>
     <div class="toolgroup is-pink">
-      <button class="tool" data-tool="pink" title="ピンク丸＋連番" aria-label="ピンク丸＋連番"><span class="dot is-pink" data-start-for="startPink">1</span></button>
+      <button class="tool" data-tool="pink" title="アンカー（ピンク丸＋連番）"><span class="dot is-pink" data-start-for="startPink" aria-hidden="true">1</span><span class="tool-name">アンカー</span></button>
       <input type="number" id="startPink" class="start-num" value="1" min="0" step="1" title="ピンク丸の開始番号" aria-label="ピンク丸の開始番号">
     </div>
     <div class="toolgroup is-green">
-      <button class="tool" data-tool="alpha" title="緑丸＋アルファベット" aria-label="緑丸＋アルファベット"><span class="dot is-green" data-start-for="startAlpha">A</span></button>
+      <button class="tool" data-tool="alpha" title="ボタン（緑丸＋アルファベット）"><span class="dot is-green" data-start-for="startAlpha" aria-hidden="true">A</span><span class="tool-name">ボタン</span></button>
       <input type="text" id="startAlpha" class="is-alpha" value="A" maxlength="2" size="2" title="緑丸の開始文字" aria-label="緑丸の開始文字">
     </div>
     <div class="toolgroup is-text">
