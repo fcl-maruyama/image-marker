@@ -122,17 +122,7 @@
     border: 1px solid #ddd;
     border-radius: 4px;
   }
-  .toolgroup input.is-alpha { width: 34px; text-transform: uppercase; }
-  /* 連動表示（アンカー先の開始番号）：編集不可。クリックで元の欄へ。変わると一瞬光る */
-  .toolgroup input[readonly] {
-    background: #f0f0f0;
-    color: #888;
-    border-style: dashed;
-    cursor: pointer;
-  }
-  .toolgroup input.is-flash { animation: flash .6s ease-out; }
-  @keyframes flash { from { background: #ffb3d9; color: #b0186b; } }
-  .toolbar .sep { width: 1px; align-self: stretch; background: #ddd; margin: 0 4px; }
+  .toolgroup input.is-alpha { width: 34px; text-transform: uppercase; }  .toolbar .sep { width: 1px; align-self: stretch; background: #ddd; margin: 0 4px; }
 
   /* 画像パネルを横並び（各400px固定・折り返さず横スクロール） */
   .panels {
@@ -237,12 +227,11 @@
     </div>
     <div class="toolgroup is-pink">
       <button class="tool" data-tool="pink" title="アンカーリンク（ピンク丸＋連番）"><span class="dot is-pink" data-start-for="startPink" aria-hidden="true">1</span><span class="tool-name">アンカーリンク</span></button>
-      <input type="number" id="startPink" class="start-num" value="1" min="0" step="1" title="アンカーリンク・アンカー先の開始番号" aria-label="アンカーリンク・アンカー先の開始番号">
+      <input type="number" id="startPink" class="start-num" value="1" min="0" step="1" title="アンカーリンクの開始番号" aria-label="アンカーリンクの開始番号">
     </div>
-    <!-- 開始番号はアンカーリンクと共通（リンクn番 ↔ 移動先n番で対応させる） -->
     <div class="toolgroup is-pinkline">
-      <button class="tool" data-tool="pinkTarget" title="アンカー先（ピンク枠の白丸＋連番・開始番号はアンカーリンクと共通）"><span class="dot is-pinkline" data-start-for="startPink" aria-hidden="true">1</span><span class="tool-name">アンカー先</span></button>
-      <input type="text" id="startPinkTarget" value="1" readonly tabindex="-1" title="アンカーリンクの開始番号と連動（変更はアンカーリンク側で）" aria-label="アンカー先の開始番号（アンカーリンクと連動）">
+      <button class="tool" data-tool="pinkTarget" title="アンカー先（ピンク枠の白丸＋連番）"><span class="dot is-pinkline" data-start-for="startPinkTarget" aria-hidden="true">1</span><span class="tool-name">アンカー先</span></button>
+      <input type="number" id="startPinkTarget" class="start-num" value="1" min="0" step="1" title="アンカー先の開始番号" aria-label="アンカー先の開始番号">
     </div>
     <div class="toolgroup is-green">
       <button class="tool" data-tool="alpha" title="ボタン（緑丸＋アルファベット）"><span class="dot is-green" data-start-for="startAlpha" aria-hidden="true">A</span><span class="tool-name">ボタン</span></button>
@@ -259,7 +248,7 @@
   </div>
 
   <div class="panels" id="panels"><!-- パネルと「＋」ボタンはJSで生成 --></div>
-  <p class="hint">各枠にクリックorドロップで画像を読み込み、上の丸を選んでクリックでマークを置く（丸の横の欄は開始番号・開始文字）。右の「＋」でパネルを追加（最大8枚）。番号（画像・ムービー・アンカーリンク・アンカー先はそれぞれ別）・アルファベットは全パネルを通して置いた順にそれぞれ連番になります。アンカーリンクとアンカー先は開始番号が共通なので、同じ順に置けば「リンク3 ↔ 移動先3」のように番号が対応します。「T」を選んでクリックすると、その場所に文字を入力できます（Enterで確定・Shift+Enterで改行・Escで取りやめ）。取り消しは全体で直前の1つ。</p>
+  <p class="hint">各枠にクリックorドロップで画像を読み込み、上の丸を選んでクリックでマークを置く（丸の横の欄は開始番号・開始文字）。右の「＋」でパネルを追加（最大8枚）。番号（画像・ムービー・アンカーリンク・アンカー先はそれぞれ別）・アルファベットは全パネルを通して置いた順にそれぞれ連番になります。アンカー先はアンカーリンクとは別に開始番号を指定できます（移動先が別の画像にあるときなど）。「T」を選んでクリックすると、その場所に文字を入力できます（Enterで確定・Shift+Enterで改行・Escで取りやめ）。取り消しは全体で直前の1つ。</p>
 
 <script>
 (() => {
@@ -276,7 +265,7 @@
     circle: document.getElementById("startRed"),
     blue: document.getElementById("startBlue"),
     pink: document.getElementById("startPink"),
-    pinkTarget: document.getElementById("startPink")   // アンカー先はリンクと同じ開始番号
+    pinkTarget: document.getElementById("startPinkTarget")
   };
   const startAlpha = document.getElementById("startAlpha");
   const toolButtons = document.querySelectorAll(".tool");
@@ -634,25 +623,13 @@
   // ボタンの丸にも開始値を表示する
   function updateStartLabels() {
     for (const type in startNums) {
-      // 1つの開始番号を複数のボタンで共有することがある（アンカーリンク・アンカー先）
-      document.querySelectorAll(`[data-start-for="${startNums[type].id}"]`).forEach((el) => { el.textContent = startValue(type); });
+      document.querySelector(`[data-start-for="${startNums[type].id}"]`).textContent = startValue(type);
     }
     document.querySelector('[data-start-for="startAlpha"]').textContent = indexToAlpha(alphaToIndex(startAlpha.value));
   }
-  for (const input of new Set([...Object.values(startNums), startAlpha])) {
+  for (const input of [...Object.values(startNums), startAlpha]) {
     input.addEventListener("input", () => { updateStartLabels(); redrawAll(); });
   }
-
-  // アンカー先の開始番号欄はアンカーリンクの欄を写すだけ。変わったら光らせて連動を見せる
-  const pinkMirror = document.getElementById("startPinkTarget");
-  pinkMirror.value = startValue("pink");   // リロード時にブラウザが欄の値を復元しても揃える
-  startNums.pink.addEventListener("input", () => {
-    pinkMirror.value = startValue("pink");
-    pinkMirror.classList.remove("is-flash");
-    void pinkMirror.offsetWidth;   // アニメーションを頭からやり直す
-    pinkMirror.classList.add("is-flash");
-  });
-  pinkMirror.addEventListener("click", () => startNums.pink.focus());
 
   // Ctrl+Z で取り消し
   document.addEventListener("keydown", (e) => {
