@@ -86,6 +86,7 @@
   .toolgroup.is-red   { --c: #e00000; --bg: #ffe3e3; }
   .toolgroup.is-blue  { --c: #1976d2; --bg: #e3f0ff; }
   .toolgroup.is-pink  { --c: #ec4098; --bg: #ffe3f3; }
+  .toolgroup.is-pinkline { --c: #ec4098; --bg: #ffe3f3; }
   .toolgroup.is-green { --c: #2ea043; --bg: #e3ffe6; }
   .toolgroup.is-text  { --c: #333;    --bg: #ececee; }
 
@@ -108,6 +109,7 @@
   .dot.is-red   { background: rgba(255,0,0,0.85);   border-color: #b00000; }
   .dot.is-blue  { background: rgba(25,118,210,0.9); border-color: #0d47a1; }
   .dot.is-pink  { background: rgba(236,64,152,0.9); border-color: #b0186b; }
+  .dot.is-pinkline { background: #fff; border-color: #ec4098; color: #ec4098; }
   .dot.is-green { background: rgba(46,160,67,0.9);  border-color: #1b7a2f; }
   .dot.is-text  { background: #333; border-color: #000; font-family: Georgia, serif; }
   .dot.is-star  { border: none; color: #f0b400; font-size: 26px; text-shadow: 0 0 1px #c08a00; }
@@ -225,8 +227,12 @@
       <input type="number" id="startBlue" class="start-num" value="1" min="0" step="1" title="青丸の開始番号" aria-label="青丸の開始番号">
     </div>
     <div class="toolgroup is-pink">
-      <button class="tool" data-tool="pink" title="アンカー（ピンク丸＋連番）"><span class="dot is-pink" data-start-for="startPink" aria-hidden="true">1</span><span class="tool-name">アンカー</span></button>
-      <input type="number" id="startPink" class="start-num" value="1" min="0" step="1" title="ピンク丸の開始番号" aria-label="ピンク丸の開始番号">
+      <button class="tool" data-tool="pink" title="アンカーリンク（ピンク丸＋連番）"><span class="dot is-pink" data-start-for="startPink" aria-hidden="true">1</span><span class="tool-name">アンカーリンク</span></button>
+      <input type="number" id="startPink" class="start-num" value="1" min="0" step="1" title="アンカーリンク・アンカー先の開始番号" aria-label="アンカーリンク・アンカー先の開始番号">
+    </div>
+    <!-- 開始番号はアンカーリンクと共通（リンクn番 ↔ 移動先n番で対応させる） -->
+    <div class="toolgroup is-pinkline">
+      <button class="tool" data-tool="pinkTarget" title="アンカー先（ピンク枠の白丸＋連番・開始番号はアンカーリンクと共通）"><span class="dot is-pinkline" data-start-for="startPink" aria-hidden="true">1</span><span class="tool-name">アンカー先</span></button>
     </div>
     <div class="toolgroup is-green">
       <button class="tool" data-tool="alpha" title="ボタン（緑丸＋アルファベット）"><span class="dot is-green" data-start-for="startAlpha" aria-hidden="true">A</span><span class="tool-name">ボタン</span></button>
@@ -243,7 +249,7 @@
   </div>
 
   <div class="panels" id="panels"><!-- パネルと「＋」ボタンはJSで生成 --></div>
-  <p class="hint">各枠にクリックorドロップで画像を読み込み、上の丸を選んでクリックでマークを置く（丸の横の欄は開始番号・開始文字）。右の「＋」でパネルを追加（最大8枚）。番号（赤・青・ピンクは色ごと）・アルファベットは全パネルを通して置いた順にそれぞれ連番になります。「T」を選んでクリックすると、その場所に文字を入力できます（Enterで確定・Shift+Enterで改行・Escで取りやめ）。取り消しは全体で直前の1つ。</p>
+  <p class="hint">各枠にクリックorドロップで画像を読み込み、上の丸を選んでクリックでマークを置く（丸の横の欄は開始番号・開始文字）。右の「＋」でパネルを追加（最大8枚）。番号（画像・ムービー・アンカーリンク・アンカー先はそれぞれ別）・アルファベットは全パネルを通して置いた順にそれぞれ連番になります。アンカーリンクとアンカー先は開始番号が共通なので、同じ順に置けば「リンク3 ↔ 移動先3」のように番号が対応します。「T」を選んでクリックすると、その場所に文字を入力できます（Enterで確定・Shift+Enterで改行・Escで取りやめ）。取り消しは全体で直前の1つ。</p>
 
 <script>
 (() => {
@@ -259,7 +265,8 @@
   const startNums = {
     circle: document.getElementById("startRed"),
     blue: document.getElementById("startBlue"),
-    pink: document.getElementById("startPink")
+    pink: document.getElementById("startPink"),
+    pinkTarget: document.getElementById("startPink")   // アンカー先はリンクと同じ開始番号
   };
   const startAlpha = document.getElementById("startAlpha");
   const toolButtons = document.querySelectorAll(".tool");
@@ -354,9 +361,9 @@
       p.canvas.height = p.img.height;
       p.ctx.drawImage(p.img, 0, 0);
     }
-    // 置いた順にマークを描く。赤・青・ピンクの丸とアルファベットは別々に通しでカウント
+    // 置いた順にマークを描く。赤・青・ピンク・アンカー先の丸とアルファベットは別々に通しでカウント
     const startA = alphaToIndex(startAlpha.value);
-    const countN = { circle: 0, blue: 0, pink: 0 };   // 色ごとの連番
+    const countN = { circle: 0, blue: 0, pink: 0, pinkTarget: 0 };   // 種類ごとの連番
     let countA = 0;   // アルファベット連番
     for (const m of marks) {
       const p = panels[m.panel];
@@ -381,14 +388,15 @@
   }
 
   // 連番ツール → 丸の色
-  const NUM_COLOR = { circle: "red", blue: "blue", pink: "pink" };
+  const NUM_COLOR = { circle: "red", blue: "blue", pink: "pink", pinkTarget: "pinkline" };
 
-  // 丸の配色
+  // 丸の配色（text省略時は白文字）
   const CIRCLE_COLORS = {
-    red:   { fill: "rgba(255,0,0,0.85)",    stroke: "#b00000" },
-    blue:  { fill: "rgba(25,118,210,0.9)",  stroke: "#0d47a1" },
-    pink:  { fill: "rgba(236,64,152,0.9)",  stroke: "#b0186b" },
-    green: { fill: "rgba(46,160,67,0.9)",   stroke: "#1b7a2f" }
+    red:      { fill: "rgba(255,0,0,0.85)",    stroke: "#b00000" },
+    blue:     { fill: "rgba(25,118,210,0.9)",  stroke: "#0d47a1" },
+    pink:     { fill: "rgba(236,64,152,0.9)",  stroke: "#b0186b" },
+    pinkline: { fill: "rgba(255,255,255,0.95)", stroke: "#ec4098", text: "#ec4098" },   // アンカー先：白地＋ピンク枠
+    green:    { fill: "rgba(46,160,67,0.9)",   stroke: "#1b7a2f" }
   };
 
   // 丸＋ラベル（color: "red"/"blue"/"pink"=連番 / "green"=緑丸アルファベット）
@@ -402,7 +410,7 @@
     ctx.strokeStyle = c.stroke;
     ctx.stroke();
 
-    ctx.fillStyle = "#fff";
+    ctx.fillStyle = c.text || "#fff";
     ctx.font = `bold ${Math.round(r * 1.1)}px system-ui, sans-serif`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
@@ -616,11 +624,12 @@
   // ボタンの丸にも開始値を表示する
   function updateStartLabels() {
     for (const type in startNums) {
-      document.querySelector(`[data-start-for="${startNums[type].id}"]`).textContent = startValue(type);
+      // 1つの開始番号を複数のボタンで共有することがある（アンカーリンク・アンカー先）
+      document.querySelectorAll(`[data-start-for="${startNums[type].id}"]`).forEach((el) => { el.textContent = startValue(type); });
     }
     document.querySelector('[data-start-for="startAlpha"]').textContent = indexToAlpha(alphaToIndex(startAlpha.value));
   }
-  for (const input of [...Object.values(startNums), startAlpha]) {
+  for (const input of new Set([...Object.values(startNums), startAlpha])) {
     input.addEventListener("input", () => { updateStartLabels(); redrawAll(); });
   }
 
