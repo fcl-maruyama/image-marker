@@ -376,7 +376,6 @@
       const w = Math.min(PANEL_MAX_WIDTH, Math.max(PANEL_MIN_WIDTH, startW + e.clientX - startX));
       panelEl.style.width = Math.round(w) + "px";
       syncTopScrollbar();
-      requestRedraw();
     });
     const end = (e) => {
       if (!resizer.hasPointerCapture(e.pointerId)) return;
@@ -389,17 +388,8 @@
     resizer.addEventListener("dblclick", () => {
       panelEl.style.width = PANEL_WIDTH + "px";
       syncTopScrollbar();
-      requestRedraw();
     });
   }
-  // 幅ドラッグ中の描き直しは1フレーム1回にまとめる
-  let redrawQueued = false;
-  function requestRedraw() {
-    if (redrawQueued) return;
-    redrawQueued = true;
-    requestAnimationFrame(() => { redrawQueued = false; redrawAll(); });
-  }
-
   // 上限に達したら＋ボタンを隠す
   function updateAddBtn() {
     addBtn.style.display = panels.length >= MAX_PANELS ? "none" : "";
@@ -439,7 +429,7 @@
 
   // マークの見た目サイズ（画像の大きさに合わせて自動調整）
   // パネルを広げたぶんだけ丸を小さくする：初期幅（400px）のときの見た目の大きさを画面上で保つ。
-  // → 横長画像はパネルを広げると、画像に対して丸・文字が相対的に小さくなる（保存PNGにもそのまま反映）
+  // 大きさは「置いた時点」で各マークに記録して確定する（あとで幅を変えても置き済みの丸は変わらない）
   function markRadius(p) {
     const img = p.img;
     if (!img) return 24;
@@ -467,7 +457,7 @@
     for (const m of marks) {
       const p = panels[m.panel];
       if (!p || !p.img) continue;
-      const r = markRadius(p);
+      const r = m.r || markRadius(p);   // 置いた時点の大きさ（古いマークは今の幅で計算）
       if (m.type in countN) {
         drawCircle(p.ctx, m.x, m.y, r, String(startValue(m.type) + countN[m.type]), NUM_COLOR[m.type]);
         countN[m.type]++;
@@ -632,7 +622,7 @@
       input.remove();
       activeTextInput = null;
       if (!commit || !text) return;
-      marks.push({ panel: index, type: "text", x: pos.x, y: pos.y, text });
+      marks.push({ panel: index, type: "text", x: pos.x, y: pos.y, r: markRadius(panel), text });
       redrawAll();
       updateButtons();
     };
@@ -661,7 +651,7 @@
         openTextInput(panel, index, e, pos);
         return;
       }
-      marks.push({ panel: index, type: currentTool, x: pos.x, y: pos.y });
+      marks.push({ panel: index, type: currentTool, x: pos.x, y: pos.y, r: markRadius(panel) });
       redrawAll();
       updateButtons();
     });
